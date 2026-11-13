@@ -1,0 +1,326 @@
+{{ 'bundle-builder.css' | asset_url | stylesheet_tag }}
+<script src="{{ 'bundle-builder.js' | asset_url }}" defer="defer"></script>
+
+{%- liquid
+  assign per_group = section.settings.products_per_group
+  assign discount = section.settings.discount_percent
+  assign heading_id = 'BundleHeading-' | append: section.id
+-%}
+
+{%- style -%}
+  .section-{{ section.id }}-padding {
+    padding-top: {{ section.settings.padding_top | times: 0.75 | round: 0 }}px;
+    padding-bottom: {{ section.settings.padding_bottom | times: 0.75 | round: 0 }}px;
+  }
+  @media screen and (min-width: 750px) {
+    .section-{{ section.id }}-padding {
+      padding-top: {{ section.settings.padding_top }}px;
+      padding-bottom: {{ section.settings.padding_bottom }}px;
+    }
+  }
+{%- endstyle -%}
+
+<div class="page-width section-{{ section.id }}-padding">
+  <bundle-builder
+    class="bundle-builder"
+    data-section-id="{{ section.id }}"
+    data-discount="{{ discount }}"
+    data-money-format="{{ shop.money_format | strip_html | escape }}"
+    data-bundle-name="{{ section.settings.bundle_name | escape }}"
+    data-cart-url="{{ routes.cart_url }}"
+    data-root-url="{{ routes.root_url }}"
+  >
+    <div class="bundle-builder__header">
+      {%- if section.settings.heading != blank -%}
+        <h2 id="{{ heading_id }}" class="bundle-builder__heading">{{ section.settings.heading | escape }}</h2>
+      {%- endif -%}
+      {%- if section.settings.text != blank -%}
+        <div class="bundle-builder__text rte">{{ section.settings.text }}</div>
+      {%- endif -%}
+    </div>
+
+    <form
+      class="bundle-builder__form"
+      action="{{ routes.cart_add_url }}"
+      method="post"
+      novalidate
+      {% if section.settings.heading != blank %}aria-labelledby="{{ heading_id }}"{% endif %}
+      data-bundle-form
+    >
+      <div class="bundle-builder__groups">
+        {%- for block in section.blocks -%}
+          {%- liquid
+            assign products = block.settings.product_list
+            if products == blank and block.settings.collection != blank
+              assign products = block.settings.collection.products
+            endif
+
+            assign group_title = block.settings.title
+            if group_title == blank and block.settings.collection != blank
+              assign group_title = block.settings.collection.title
+            endif
+            if group_title == blank
+              assign group_title = 'Item ' | append: forloop.index
+            endif
+
+            assign group_id = 'BundleGroup-' | append: block.id
+          -%}
+
+          {%- if products == blank or products.size == 0 -%}
+            {%- if request.design_mode -%}
+              <div class="bundle-group bundle-group--empty" {{ block.shopify_attributes }}>
+                <p>Choose a collection or products for "{{ group_title | escape }}".</p>
+              </div>
+            {%- endif -%}
+            {%- continue -%}
+          {%- endif -%}
+
+          <fieldset
+            class="bundle-group"
+            data-bundle-group
+            data-group-title="{{ group_title | escape }}"
+            {{ block.shopify_attributes }}
+          >
+            <legend class="bundle-group__legend">
+              <span class="bundle-group__step" aria-hidden="true">{{ forloop.index }}</span>
+              {{ group_title | escape }}
+            </legend>
+
+            {%- assign available_count = 0 -%}
+            <ul class="bundle-group__options" role="list">
+              {%- for product in products limit: per_group -%}
+                {%- liquid
+                  assign variant = product.selected_or_first_available_variant
+                  assign input_id = group_id | append: '-' | append: product.id
+                  if product.available
+                    assign available_count = available_count | plus: 1
+                  endif
+                -%}
+                <li class="bundle-option{% unless product.available %} is-sold-out{% endunless %}" data-bundle-option>
+                  <input
+                    type="radio"
+                    class="bundle-option__input"
+                    id="{{ input_id }}"
+                    name="{{ group_id }}"
+                    value="{{ variant.id }}"
+                    data-price="{{ variant.price }}"
+                    data-title="{{ product.title | escape }}"
+                    {% unless product.has_only_default_variant %}
+                      data-variant-title="{{ variant.title | escape }}"
+                    {% endunless %}
+                    {% unless product.available %}
+                      disabled
+                    {% endunless %}
+                  >
+                  <label class="bundle-option__card" for="{{ input_id }}">
+                    <span class="bundle-option__media">
+                      {%- if product.featured_image -%}
+                        {{
+                          product.featured_image
+                          | image_url: width: 400
+                          | image_tag:
+                            loading: 'lazy',
+                            widths: '200, 300, 400',
+                            sizes: '(min-width: 990px) 200px, 45vw',
+                            alt: product.featured_image.alt
+                        }}
+                      {%- else -%}
+                        {{ 'product-1' | placeholder_svg_tag: 'bundle-option__placeholder' }}
+                      {%- endif -%}
+                    </span>
+                    <span class="bundle-option__title">{{ product.title | escape }}</span>
+                    <span class="bundle-option__price" data-option-price>
+                      {%- if product.available -%}
+                        {{ variant.price | money }}
+                        {%- if variant.compare_at_price > variant.price -%}
+                          <s class="bundle-option__compare">{{ variant.compare_at_price | money }}</s>
+                        {%- endif -%}
+                      {%- else -%}
+                        <span class="bundle-option__badge">Sold out</span>
+                      {%- endif -%}
+                    </span>
+                  </label>
+
+                  {%- if product.available and product.has_only_default_variant == false -%}
+                    <label class="visually-hidden" for="{{ input_id }}-variant">{{ product.title | escape }} options</label>
+                    <select id="{{ input_id }}-variant" class="bundle-option__variant" data-variant-select>
+                      {%- for v in product.variants -%}
+                        <option
+                          value="{{ v.id }}"
+                          data-price="{{ v.price }}"
+                          data-title="{{ v.title | escape }}"
+                          {% if v.id == variant.id %}selected{% endif %}
+                          {% unless v.available %}disabled{% endunless %}
+                        >
+                          {{ v.title | escape }}{% unless v.available %} (sold out){% endunless %}
+                        </option>
+                      {%- endfor -%}
+                    </select>
+                  {%- endif -%}
+                </li>
+              {%- endfor -%}
+            </ul>
+
+            {%- if available_count == 0 -%}
+              <p class="bundle-group__notice">Everything in this group is sold out right now.</p>
+            {%- endif -%}
+          </fieldset>
+        {%- endfor -%}
+      </div>
+
+      <div class="bundle-summary">
+        <h3 class="bundle-summary__title">Your bundle</h3>
+        <ol class="bundle-summary__list" data-summary-list></ol>
+
+        <dl class="bundle-summary__prices">
+          <div class="bundle-summary__row" data-subtotal-row hidden>
+            <dt>Subtotal</dt>
+            <dd data-subtotal></dd>
+          </div>
+          {%- if discount > 0 -%}
+            <div class="bundle-summary__row bundle-summary__row--saving" data-saving-row hidden>
+              <dt>Bundle saving ({{ discount }}%)</dt>
+              <dd data-saving></dd>
+            </div>
+          {%- endif -%}
+          <div class="bundle-summary__row bundle-summary__row--total">
+            <dt>Bundle price</dt>
+            <dd data-total>{{ 0 | money }}</dd>
+          </div>
+        </dl>
+
+        <p class="bundle-summary__status" data-status aria-live="polite"></p>
+        <div class="bundle-summary__error" data-error role="alert" hidden></div>
+
+        <button type="submit" class="button button--full-width bundle-summary__submit" data-submit disabled>
+          <span data-submit-label>{{ section.settings.button_label | escape }}</span>
+          <span class="bundle-summary__spinner" aria-hidden="true"></span>
+        </button>
+
+        <p class="bundle-summary__success" data-success hidden>
+          Bundle added. <a href="{{ routes.cart_url }}">View cart</a>
+        </p>
+      </div>
+    </form>
+  </bundle-builder>
+</div>
+
+{% schema %}
+{
+  "name": "Bundle builder",
+  "tag": "section",
+  "class": "section section-bundle-builder",
+  "max_blocks": 3,
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Build your 3-pack"
+    },
+    {
+      "type": "richtext",
+      "id": "text",
+      "label": "Text",
+      "default": "<p>Pick one item from each group and add them to your cart together.</p>"
+    },
+    {
+      "type": "range",
+      "id": "products_per_group",
+      "label": "Products per group",
+      "min": 2,
+      "max": 12,
+      "step": 1,
+      "default": 6
+    },
+    {
+      "type": "header",
+      "content": "Bundle"
+    },
+    {
+      "type": "text",
+      "id": "bundle_name",
+      "label": "Bundle name",
+      "info": "Saved on each cart line as the \"Bundle\" property.",
+      "default": "3-Pack Bundle"
+    },
+    {
+      "type": "range",
+      "id": "discount_percent",
+      "label": "Displayed bundle discount",
+      "min": 0,
+      "max": 50,
+      "step": 5,
+      "unit": "%",
+      "default": 0,
+      "info": "Only changes the price shown here. Create a matching automatic discount so checkout charges the same amount."
+    },
+    {
+      "type": "text",
+      "id": "button_label",
+      "label": "Button label",
+      "default": "Add bundle to cart"
+    },
+    {
+      "type": "header",
+      "content": "Section padding"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Top padding",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 36
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Bottom padding",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "default": 36
+    }
+  ],
+  "blocks": [
+    {
+      "type": "group",
+      "name": "Product group",
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Group title",
+          "info": "Defaults to the collection title."
+        },
+        {
+          "type": "collection",
+          "id": "collection",
+          "label": "Collection"
+        },
+        {
+          "type": "product_list",
+          "id": "product_list",
+          "label": "Or pick products",
+          "limit": 12,
+          "info": "Overrides the collection when set."
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Bundle builder",
+      "blocks": [
+        { "type": "group" },
+        { "type": "group" },
+        { "type": "group" }
+      ]
+    }
+  ]
+}
+{% endschema %}
