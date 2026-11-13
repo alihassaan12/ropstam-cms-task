@@ -111,6 +111,21 @@ Then in the theme editor: **Add section → Bundle builder**. The section comes 
 
 ---
 
+## Key technical decisions
+
+- **Dynamic block instead of a static one.** Prices and the "latest 3" list change often, so the block renders on the server. Saved post content never goes stale, and the block and shortcode share one renderer.
+- **No build step for the editor script.** It uses the `wp.*` globals directly, so the plugin can be uploaded and used as-is. The trade-off is plain `createElement` calls instead of JSX.
+- **Money in cents.** Both PHP and JS work with integers, so totals never show floating point errors like `0.30000000000000004`.
+- **Assets only where they are used.** Scripts and styles are registered on `init` but enqueued from the renderer, so pages without the block load nothing extra.
+- **Native form controls for accessibility.** WordPress add-ons are `<button aria-pressed>` toggles. Shopify groups are `<fieldset>` + radio inputs, so keyboard support and screen reader announcements come from the browser instead of custom code.
+- **One `/cart/add.js` request for the whole bundle.** Sending all three items together means Shopify accepts or rejects the bundle as a unit, instead of leaving a half-added bundle in the cart.
+- **`_bundle_id` line item property.** It links the three lines so a discount function, cart drawer or order export can group them later. The leading underscore keeps it hidden from customers.
+- **Custom element for the Shopify section.** `<bundle-builder>` sets itself up in `connectedCallback`, so it also works when the theme editor re-renders the section, with no global init code.
+- **Discount is display-only.** Changing the real price needs a Shopify discount or Function. Applying it only in the UI would show a price the checkout doesn't charge, so it defaults to 0%.
+
+---
+
+
 ## Repo structure
 
 ```
