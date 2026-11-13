@@ -10,7 +10,7 @@ This repo has both parts of the task:
 **Demo links**
 
 - WordPress: https://lightyellow-goat-576244.hostingersite.com/
-- Shopify: _add link_ (storefront password: _add password_)
+- Shopify: https://bundle-builder-demo-wvcbnxbs.myshopify.com/ (storefront password: `skewgi`)
 
 ---
 
