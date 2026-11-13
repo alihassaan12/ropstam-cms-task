@@ -1,0 +1,41 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "rs-services/service-calculator",
+  "version": "1.0.0",
+  "title": "Services Price Calculator",
+  "category": "widgets",
+  "icon": "calculator",
+  "description": "Shows the 3 most recently updated services with optional add-ons and a live price estimate.",
+  "keywords": [ "services", "price", "calculator", "add-on" ],
+  "textdomain": "rs-services",
+  "attributes": {
+    "heading": {
+      "type": "string",
+      "default": "Our latest services"
+    },
+    "currencySymbol": {
+      "type": "string",
+      "default": "$"
+    },
+    "showExcerpt": {
+      "type": "boolean",
+      "default": true
+    },
+    "addons": {
+      "type": "array",
+      "default": [
+        { "label": "Priority Turnaround", "price": 50, "days": -2 },
+        { "label": "Extra Revision Round", "price": 25, "days": 1 },
+        { "label": "Source Files", "price": 30, "days": 0 }
+      ]
+    }
+  },
+  "supports": {
+    "html": false,
+    "align": [ "wide", "full" ],
+    "spacing": { "margin": true, "padding": true }
+  },
+  "editorScript": "rs-services-calculator-editor",
+  "editorStyle": "rs-services-calculator"
+}

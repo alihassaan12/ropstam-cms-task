@@ -24,9 +24,13 @@ require_once RS_SERVICES_DIR . 'includes/post-type.php';
 require_once RS_SERVICES_DIR . 'includes/meta.php';
 require_once RS_SERVICES_DIR . 'includes/query.php';
 require_once RS_SERVICES_DIR . 'includes/render.php';
+require_once RS_SERVICES_DIR . 'includes/block.php';
 
 add_action( 'init', 'rs_services_register_post_type' );
 add_action( 'init', 'rs_services_register_meta' );
+add_action( 'init', 'rs_services_register_assets', 5 );
+add_action( 'init', 'rs_services_register_block' );
+add_action( 'init', 'rs_services_register_shortcode' );
 
 add_action( 'add_meta_boxes_' . RS_SERVICES_CPT, 'rs_services_add_meta_box' );
 add_action( 'save_post_' . RS_SERVICES_CPT, 'rs_services_save_meta' );
