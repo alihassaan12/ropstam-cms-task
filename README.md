@@ -9,7 +9,7 @@ This repo has both parts of the task:
 
 **Demo links**
 
-- WordPress: _add link_
+- WordPress: https://lightyellow-goat-576244.hostingersite.com/
 - Shopify: _add link_ (storefront password: _add password_)
 
 ---
