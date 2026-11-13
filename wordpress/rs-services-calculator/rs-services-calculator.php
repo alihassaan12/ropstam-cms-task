@@ -21,8 +21,13 @@ define( 'RS_SERVICES_URL', plugin_dir_url( __FILE__ ) );
 define( 'RS_SERVICES_CPT', 'rs_service' );
 
 require_once RS_SERVICES_DIR . 'includes/post-type.php';
+require_once RS_SERVICES_DIR . 'includes/meta.php';
 
 add_action( 'init', 'rs_services_register_post_type' );
+add_action( 'init', 'rs_services_register_meta' );
+
+add_action( 'add_meta_boxes_' . RS_SERVICES_CPT, 'rs_services_add_meta_box' );
+add_action( 'save_post_' . RS_SERVICES_CPT, 'rs_services_save_meta' );
 
 register_activation_hook( __FILE__, 'rs_services_activate' );
 register_deactivation_hook( __FILE__, 'rs_services_deactivate' );
