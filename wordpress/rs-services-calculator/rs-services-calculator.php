@@ -22,6 +22,8 @@ define( 'RS_SERVICES_CPT', 'rs_service' );
 
 require_once RS_SERVICES_DIR . 'includes/post-type.php';
 require_once RS_SERVICES_DIR . 'includes/meta.php';
+require_once RS_SERVICES_DIR . 'includes/query.php';
+require_once RS_SERVICES_DIR . 'includes/render.php';
 
 add_action( 'init', 'rs_services_register_post_type' );
 add_action( 'init', 'rs_services_register_meta' );
